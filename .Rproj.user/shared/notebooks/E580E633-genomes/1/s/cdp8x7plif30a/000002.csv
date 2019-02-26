@@ -1,6 +1,0 @@
-"0","genomes_data_df %>%"
-"0","  filter(grepl(""Complete"", status)) %>%"
-"0","  mutate(size_mb = as.numeric(size_mb)) %>%"
-"0","  group_by(group,sub_group) %>%"
-"0","  summarize(avg_size_mb = mean(size_mb, na.rm = T)) %>%"
-"0","  arrange(desc(avg_size_mb))"

@@ -1,5 +1,0 @@
-"0","genomes_data_df %>%"
-"0","    separate(release_date, c(""year"",""month"",""day"")) %>%"
-"0","    group_by(number_organism_name) %>%"
-"0","    summarise(genomes_cnt = n()) %>%"
-"0","    arrange(desc(genomes_cnt))"

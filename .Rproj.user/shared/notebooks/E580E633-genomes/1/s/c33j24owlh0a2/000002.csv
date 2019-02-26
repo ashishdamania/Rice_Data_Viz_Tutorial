@@ -1,6 +1,0 @@
-"0","genomes_data_df %>%"
-"0","  filter(grepl(""CDC|Centers for Disease Control and Prevention|Food And Drug"",center)) %>%"
-"0","  filter(status == ""Complete Genome"") %>%"
-"0","  mutate(gc_percent = as.numeric(gc_percent)) %>%"
-"0","  summarize(mean_gc = mean(gc_percent, na.rm = T))"
-"2","NAs introduced by coercion"

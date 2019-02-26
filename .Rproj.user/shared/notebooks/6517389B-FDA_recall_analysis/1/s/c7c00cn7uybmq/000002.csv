@@ -1,4 +1,0 @@
-"0","complete_df %>%"
-"0","   mutate(reason=tolower(reason)) %>%"
-"0","   filter(grepl(""salmonella"",reason)) %>%"
-"0","   summarize(n=n())"

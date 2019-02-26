@@ -1,4 +1,0 @@
-"0","houston_weather_df %>%"
-"0","  bind_rows(., chicago_weather_df, seattle_weather_df) %>%"
-"0","  ggplot(., aes(x=avg_temp, fill=site4, color=site4)) +"
-"0","  geom_histogram(position=""identity"",  alpha = 0.5)"

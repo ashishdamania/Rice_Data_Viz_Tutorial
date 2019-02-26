@@ -1,7 +1,0 @@
-"0","genomes_data_df %>%"
-"0","  filter(status == ""Complete Genome"") %>%"
-"0","  mutate(gc_percent = as.numeric(gc_percent)) %>%"
-"0","  group_by(sub_group) %>%"
-"0","  summarize(mean_gc = mean(gc_percent, na.rm = T)) %>%"
-"0","  arrange(desc(mean_gc))"
-"2","NAs introduced by coercion"

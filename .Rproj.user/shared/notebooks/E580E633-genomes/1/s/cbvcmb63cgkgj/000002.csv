@@ -1,8 +1,0 @@
-"0","genomes_data_df %>%"
-"0","    separate(release_date, c(""year"",""month"",""day"")) %>%"
-"0","    group_by(year) %>%"
-"0","    summarise(genomes_cnt = n()) %>%"
-"0","    ggplot(.,aes(x = year, y = genomes_cnt)) +"
-"0","    geom_bar(stat = ""identity"") +"
-"0","    theme_minimal()+"
-"0","    theme(axis.text.x = element_text(angle = 45, hjust = 1)) "

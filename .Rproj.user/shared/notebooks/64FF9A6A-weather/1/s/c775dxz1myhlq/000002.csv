@@ -1,4 +1,0 @@
-"0","houston_weather_df %>%"
-"0","  bind_rows(., chicago_weather_df, seattle_weather_df) %>%"
-"0","  ggplot(.,aes(avg_temp, color = site4)) +"
-"0","  stat_ecdf(geom = ""point"") "
