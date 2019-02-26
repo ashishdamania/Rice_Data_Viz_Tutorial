@@ -1,0 +1,379 @@
+---
+title: "R Notebook - Analyze weather data"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    highlight: haddock
+    mathjax: null
+    number_sections: yes
+    theme: spacelab
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Load library
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+Hourly Weather data downloaded from http://www.frontierweather.com/historicaldatasubscribers_hourly.html
+
+Daily Weather data downloaded from http://www.frontierweather.com/weatherdatastore.html
+
+# Daily weather data
+
+## Read the Houston daily weather data
+```{r}
+houston_weather <- read_delim("weather_data/KIAH_daily.txt", delim = ",")
+```
+
+* Find out what these columns mean. 
+    + Site4 : Name of the site
+    
+    + Date : Date when the data was collected
+    
+    + Source : Name of their instrument
+    
+    + Max Temp : Maximum temperature of the day
+    
+    + Min Temp : Minimum temperature of the day
+    
+    + Avg Temp : Average temperature (Max + Min)/2
+    
+    + HDDs : Heating degree day (Temps below 65) https://w1.weather.gov/glossary/index.php?letter=h
+    
+    + CDDs : Cooling degree day (Temps above 65) - A form of degree day used to estimate energy requirements for air conditioning or refrigeration.  For example, if a location experiences a mean temperature of 75°F on a certain day, there were 10 CDD (Cooling Degree Days) that day because 75 - 65 = 10.) https://w1.weather.gov/glossary/index.php?letter=c
+    
+    + Precipitation Water Equiv : Rain in inches
+    
+    + Snowfall : Amount of snowfall since 24 hours (https://www.weather.gov/gsp/snow)
+    
+    + Snow/Ice Depth : The depth of the new and old snow remaining on the ground at observation time (https://www.weather.gov/gsp/snow)
+
+
+
+
+### Find out more about this function
+```{r}
+??read_delim
+```
+
+
+## "Format" the data
+```{r}
+houston_weather_df <- houston_weather %>%
+  mutate(Date=as.Date(Date,format='%m/%d/%Y')) %>%
+  separate(Date,c("year","month","day")) %>%
+  janitor::clean_names()
+```
+
+
+
+
+## Read Chicago daily weather data
+```{r}
+chicago_weather <- read_csv("weather_data/KORD_daily.txt") 
+```
+
+Notice we have used different function but without explicitly mentioning delimiter. 
+
+## "Format" Chicago weather
+```{r}
+chicago_weather_df <- chicago_weather %>%
+  mutate(Date=as.Date(Date,format='%m/%d/%Y')) %>%
+  separate(Date,c("year","month","day")) %>%
+  janitor::clean_names()
+```
+
+
+
+## Get Seattle weather data and format
+```{r}
+seattle_weather_df <- read_csv("weather_data/KSEA_daily.txt")  %>%
+  mutate(Date = as.Date(Date, format='%m/%d/%Y')) %>%
+  separate(Date, c("year","month","day")) %>%
+  janitor::clean_names()
+```
+
+
+
+
+
+
+
+
+
+## Comparing mean temperature between Houston and Chicago
+```{r}
+houston_weather_df %>%
+  bind_rows(., chicago_weather_df, seattle_weather_df) %>%
+  group_by(site4, year) %>%
+  summarise(mean_temp_year=mean(avg_temp)) %>%
+  ungroup() %>%
+  ggplot(.,aes(x = as.numeric(year), y = mean_temp_year, color = site4)) +
+  geom_line(lwd = 2) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  theme_bw()
+```
+
+Fix the x axis label and the legend??
+
+
+
+
+## Plot Histogram
+```{r}
+houston_weather_df %>%
+  bind_rows(., chicago_weather_df, seattle_weather_df) %>%
+  ggplot(., aes(x=avg_temp, fill=site4, color=site4)) +
+  geom_histogram(position="identity",  alpha = 0.5)
+  geom_histogram(position="identity")
+```
+
+
+## Plot Empirical Cumulative Distribution Function 
+```{r}
+houston_weather_df %>%
+  bind_rows(., chicago_weather_df, seattle_weather_df) %>%
+  ggplot(.,aes(avg_temp, color = site4)) +
+  stat_ecdf(geom = "point") 
+```
+
+
+A CDF is a function such as y=f(x) where y is the probability of the number x, or any lower number, being chosen at random from that distribution. 
+
+source: https://www.che.utah.edu/~tony/course/material/Statistics/18_rv_pdf_cdf.php
+
+Here we are talking about ECDF “Empirical” CDF. This means this is not a representation of the entire set (or theoretical distribution) but what was observed and hence the word “empirical”. 
+
+
+
+## Stem and leaf plot
+```{r}
+stem(houston_weather_df$max_temp)
+```
+
+It can be informative but compared to histogram or ecdf plot, it can be hard to read. 
+
+
+
+## See the spread of the temperature by month
+```{r}
+houston_weather_df %>%
+  bind_rows(chicago_weather_df, seattle_weather_df) %>%
+  group_by(site4,month) %>%
+  summarise(max = max(max_temp,na.rm = T), 
+            min = min(min_temp, na.rm = T), 
+            mean = mean(avg_temp, na.rm = T)) %>%
+  ungroup() %>%
+  ggplot(., aes(x = month, y = mean)) +
+  geom_linerange(aes( ymin = min, ymax = max), lwd = 2, color = "#FF5400") +
+  geom_point(size = 3, color = "#2142A6") +
+  coord_flip() +
+  theme_bw(base_size = 14) +
+  geom_hline(yintercept = 65, linetype = "dashed") +
+  xlab("Month") +
+  ylab("Temperature in Farahenit") +
+  facet_grid(.~site4)
+```
+
+
+
+
+# Percent drop as compare to previous month. 
+```{r}
+houston_weather_df %>%
+  bind_rows(chicago_weather_df) %>%
+  bind_rows(seattle_weather_df) %>%
+  group_by(site4, month) %>%
+  summarise(mean_avg_temp = mean(avg_temp,na.rm = T)) %>%
+  mutate(pct_change = (mean_avg_temp / lag(mean_avg_temp) - 1) * 100) %>%
+  mutate(pct_change = case_when(
+    is.na(pct_change) ~ 0,
+    TRUE ~ as.numeric(pct_change)
+  )) %>%
+  arrange(pct_change) %>% 
+  ggplot(.,aes(x = month, y = pct_change, color = site4)) +
+  geom_line(aes(group = site4), size = 1)+
+  geom_point() +
+  theme_bw()
+```
+
+
+
+
+
+
+
+
+
+
+## Where does it rain the most?
+```{r, fig.width=10}
+houston_weather_df %>%
+  bind_rows(chicago_weather_df, seattle_weather_df) %>%
+  group_by(site4,year) %>%
+  summarise(sum = sum(precipitation_water_equiv, na.rm = T)) %>%
+  ungroup() %>%
+  ggplot(., aes(x = year, y = sum, color = site4) ) +
+  geom_point() +
+  geom_line(aes(group = site4), size = 1)+
+  theme_bw(base_size = 14) +
+  theme(axis.text.x = element_text(angle = 65, hjust = 1)) +
+  ylab("Rainfall in inches") 
+```
+This graph shows total rainfall in inches over the years. 
+
+
+
+
+# Average rainfall with the circles showing the maximum recorded rainfall for single day
+```{r}
+houston_weather_df %>%
+  bind_rows(chicago_weather_df, seattle_weather_df) %>%
+  group_by(site4,month) %>%
+  summarise(max = max(precipitation_water_equiv,na.rm = T), 
+            mean = mean(precipitation_water_equiv, na.rm = T)) %>%
+  ungroup() %>%
+  ggplot(. ) +
+  geom_point(aes(x = month, y = mean,size = max), color = "#2142A6") +
+  coord_flip() +
+  theme_bw(base_size = 14) +
+  xlab("Month") +
+  ylab("Average rain fall in inches") +
+  facet_wrap(.~site4)
+```
+
+
+
+
+
+
+
+
+
+
+# Hourly weather data
+
+## Read Houston hourly weather data
+```{r}
+houston_weather_hourly <- read_csv("weather_data/KIAH.txt") %>%
+  mutate(date=as.Date(Date,format='%m/%d/%Y')) %>%
+  separate(date,c("year","month","day")) %>%
+  janitor::clean_names()
+```
+
+
+## Read Chicago Hourly weather data
+```{r}
+chicago_weather_hourly <- read_csv("weather_data/KORD.txt") %>%
+  mutate(date = as.Date(Date, format = '%m/%d/%Y')) %>%
+  separate(date, c("year","month","day")) %>%
+  janitor::clean_names()
+```
+
+
+
+
+
+## Add Seattle hourly weather data
+```{r}
+seattle_weather_hourly <- read_csv("weather_data/KSEA.txt") %>%
+  mutate(date=as.Date(Date, format = '%m/%d/%Y')) %>%
+  separate(date, c("year", "month", "day")) %>%
+  janitor::clean_names()
+```
+
+
+## Is Seattle really cloudy as compare to Chicago and Houston?
+```{r}
+houston_weather_hourly %>%
+  bind_rows(., chicago_weather_hourly,seattle_weather_hourly ) %>%
+  mutate(date=as.Date(date,format='%m/%d/%Y')) %>%
+  separate(date,c("year","month","day")) %>%
+  group_by(site, year) %>%
+  summarise(mean_cloud_coverage = mean(`cld_frac`)) %>%
+  ungroup() %>% 
+  ggplot(.,aes(x = as.numeric(year), y = mean_cloud_coverage, color = site)) +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
+```
+
+
+```{r}
+houston_weather_hourly %>%
+  bind_rows(., chicago_weather_hourly,seattle_weather_hourly ) %>%
+  mutate(date=as.Date(date,format='%m/%d/%Y')) %>%
+  separate(date,c("year","month","day")) %>%
+  group_by(site, month) %>%
+  summarise(sum_cloud_coverage = sum(`cld_frac`),avg_cloud_coverage = mean(`cld_frac`)) %>%
+  ungroup() %>% 
+  ggplot(.,aes(x = as.numeric(month), y = sum_cloud_coverage, color = site)) +
+  geom_line(linetype = "dotdash") +
+  geom_point(aes(inherit.aes=TRUE, size = avg_cloud_coverage)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
+```
+
+
+#Days with less than 30% average cloud coverage
+```{r}
+houston_weather_hourly %>%
+  bind_rows(., chicago_weather_hourly,seattle_weather_hourly ) %>%
+  mutate(date=as.Date(date,format='%m/%d/%Y')) %>%
+  separate(date,c("year","month","day")) %>%
+  group_by(site, year, month, day) %>%
+  summarise(avg_cloud_coverage = mean(`cld_frac`)) %>%
+  ungroup() %>% 
+  group_by(site, year) %>%
+  summarise(no_cloudy_days = sum(avg_cloud_coverage < .30)) %>%
+  ggplot(.,aes(x = as.numeric(year), y = no_cloudy_days, color = site)) +
+  geom_line(linetype=2) +
+  geom_point(aes(inherit.aes=TRUE)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
+  ylab("Number of days with average cloud cover < 30%") +
+  xlab("Year")
+```
+
+
+
+
+
+
+
+
+
+## Is Chicago the windiest city in our set?
+```{r}
+houston_weather_hourly %>%
+  bind_rows(., chicago_weather_hourly,seattle_weather_hourly) %>%
+  mutate(date=as.Date(date,format = '%m/%d/%Y')) %>%
+  separate(date,c("year","month","day")) %>%
+  group_by(site, year) %>%
+  summarise(mean_windspeed = mean(`windspeed`)) %>%
+  ungroup() %>% 
+  ggplot(.,aes(x = as.numeric(year), y = mean_windspeed, color = site)) +
+  geom_line(size = 2) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) 
+```
+
+
+
+
+
+
+
+
+

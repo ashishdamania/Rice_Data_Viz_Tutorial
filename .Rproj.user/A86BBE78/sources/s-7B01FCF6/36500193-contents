@@ -1,0 +1,216 @@
+---
+title: "R Notebook : Analyzing FDA recall data from 2009-2018"
+output: 
+  html_notebook:
+    highlight: haddock
+    mathjax: null
+    number_sections: yes
+    theme: readable
+    toc: yes
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+# Load library
+```{r}
+library(tidyverse)
+library(janitor)
+library(xml2)
+library(rvest)
+```
+
+
+**Data downloaded from: https://www.fda.gov/aboutfda/transparency/opengovernment/ucm225433.htm **
+```{r}
+part_2009_2017_xml <- rbind(
+XML::xmlToDataFrame("FDA_recall_data/RecallsDataSet2009-2011.xml"),
+XML::xmlToDataFrame("FDA_recall_data/RecallsDataSet2012-2014.xml"),
+XML::xmlToDataFrame("FDA_recall_data/RecallsDataSet2015-2017.xml")
+) 
+
+part_2009_2017_df <-  part_2009_2017_xml %>%
+  janitor::clean_names() %>%
+  select(-photos_link, -company_release_link, -text) %>%
+  mutate(date = str_sub(date, 5,16)) %>%
+  mutate(date = lubridate::dmy(date)) %>%
+  select(date, brand_name, product_description, reason, company)
+```            
+
+
+Data for 2018 is available separately and is not in standard XML. 
+```{r}            
+pg <- read_html("FDA_recall_data/recalls2018.xml")
+date <- head(html_nodes(pg, "date"), "recall") %>%
+        html_text()
+brand_name <- head(html_nodes(pg, "brand"), "recall") %>%
+        html_text()
+product_description <- head(html_nodes(pg, "productdescription"), "recall") %>%
+        html_text()
+reason <- head(html_nodes(pg, "reason"), "recall") %>%
+        html_text()
+company <- head(html_nodes(pg, "company"), "recall") %>%
+        html_text()
+
+part_2018_df <- data.frame(date,brand_name,product_description,reason,company) %>%
+             mutate(date = lubridate::mdy(date)) %>%
+             mutate_if(is.factor,as.character)
+```
+
+
+# Combine data 
+Combine data from 2018 with rest of the years starting from 2009
+```{r}
+complete_df_1 <- rbind(part_2009_2017_df, part_2018_df)
+```
+
+Inspect all the columns in the dataframe
+```{r}
+str(complete_df_1)
+```
+
+#Fix the date column by creating three new column as year, month and day
+```{r}
+complete_df <- complete_df_1 %>%
+  separate(date,c("Year","Month","Day"))
+```
+
+
+# Check the data again
+```{r}
+str(complete_df)
+```
+
+
+
+
+
+# Find the product with most recalls in last 10 year
+```{r}
+complete_df %>%
+  group_by(product_description) %>%
+  summarize(c = n()) %>%
+  arrange(desc(c)) %>%
+  filter()
+```
+
+
+
+
+# Find the top reasons for Ice cream recall. 
+Since Ice cream is the number one product for the recall
+```{r}
+complete_df %>%
+  filter(product_description == "Ice Cream") %>%
+  group_by(reason) %>%
+  summarize(c = n()) %>%
+  arrange(desc(c)) %>%
+  filter()
+```
+
+# Find the top brands with Ice cream recall
+```{r}
+complete_df %>%
+  filter(product_description == "Ice Cream") %>%
+  group_by(brand_name) %>%
+  summarize(c = n()) %>%
+  arrange(desc(c)) %>%
+  filter()
+```
+
+
+
+
+# No 1 recall reason for all items 
+```{r}
+complete_df %>%
+  group_by(reason) %>%
+  summarize(c = n()) %>%
+  arrange(desc(c)) %>%
+  filter()
+```
+We see that Salmonella is the number one reason over the past 10 years, but look at the reason column more carefully. There are so many entries such as "presence of salmonella" which tells us that the count is more than 1180. 
+
+
+
+
+# Find all the entries where the word "Salmonella occurs"
+We will convert all the entries into lowercase so that we can find the word "salmonella" anywhere in the reson column
+```{r}
+complete_df %>%
+   mutate(reason=tolower(reason)) %>%
+   filter(grepl("salmonella",reason)) %>%
+   summarize(n=n())
+```
+The count value for Salmonella rose to 1255 to 1180. 
+
+
+
+# Find all the entries where the word "Salmonella occurs"
+Now we want to find what products are associated with the Salmonella contamination. 
+```{r}
+complete_df %>%
+   mutate(reason=tolower(reason)) %>%
+   filter(grepl("salmonella",reason)) %>%
+   group_by(reason, product_description) %>%
+   summarize(c = n()) %>%
+   arrange(desc(c))
+```
+Pistachios are the number one product with Salmonella contamination. 
+
+
+
+# Find the brand that is associated with the Salmonella contamination and Pistachios
+```{r}
+complete_df %>%
+   mutate(reason=tolower(reason)) %>%
+   mutate(product_description=tolower(product_description)) %>%
+   filter(grepl("salmonella",reason)) %>%
+   filter(grepl("pistachio",product_description)) %>%
+   group_by(brand_name, Year) %>%
+   summarize(c = n()) %>%
+   arrange(desc(c))
+```
+Is the count correct? What can be improved?
+
+
+#Find recall grouped by company
+```{r}
+complete_df %>%
+  group_by(company) %>%
+  summarize(c = n()) %>%
+  arrange(desc(c)) 
+```
+
+
+
+# Find all the recalls by year
+```{r}
+complete_df %>%
+  group_by(Year) %>%
+  summarize(c = n()) %>%
+  arrange(desc(Year)) %>%
+  filter()
+```
+
+
+
+
+#Find recalls grouped by month
+```{r}
+complete_df %>%
+  group_by(Month) %>%
+  summarize(c = n()) %>%
+  arrange(desc(c)) 
+```
+February has the highest recalls over the last 10 year
+
+
+
+
+
+

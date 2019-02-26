@@ -1,0 +1,7 @@
+"0","genomes_data_df %>% "
+"0","filter(grepl(""Complete"", status)) %>%"
+"0","filter(size_mb < 5) %>%"
+"0","ggplot(.,aes(x = size_mb, y = genes)) +"
+"0","geom_point() +"
+"0","theme_bw() +"
+"0","geom_smooth(method = ""lm"", se = FALSE)"

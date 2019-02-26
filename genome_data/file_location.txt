@@ -1,0 +1,2 @@
+File Location:
+ftp://ftp.ncbi.nlm.nih.gov/genomes/GENOME_REPORTS/

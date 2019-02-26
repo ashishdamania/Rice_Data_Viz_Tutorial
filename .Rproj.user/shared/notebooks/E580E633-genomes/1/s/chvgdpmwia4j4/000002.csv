@@ -1,0 +1,3 @@
+"0","genomes_data <- data.table::fread(""genome_data/prokaryotes.txt"") %>%"
+"0","  janitor::clean_names()"
+"2","Found and resolved improper quoting out-of-sample. First healed line 41875: <<Rhodococcus erythropolis DN1	1381122	PRJNA214035	214035	Terrabacteria group	Actinobacteria	6.5484	62.4	-	AUZK01	78	6163	5630	2013/08/23	2017/04/01	Contig	""National Center for Biotechnology"" RSE	SAMN02470607	GCA_000454425.1	-	ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/454/425/GCA_000454425.1_RodocDN1	24136850	DN1>>. If the fields are not quoted (e.g. field separator does not appear within any field), try quote="""" to avoid this warning."

@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1551155346735.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2748665363",
+    "id" : "36500193",
+    "lastKnownWriteTime" : 1551155646,
+    "last_content_update" : 1551155646240,
+    "path" : "~/Rice_R_final/FDA_recall_analysis.Rmd",
+    "project_path" : "FDA_recall_analysis.Rmd",
+    "properties" : {
+        "chunk_output_type" : "inline"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

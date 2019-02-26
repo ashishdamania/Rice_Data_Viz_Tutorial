@@ -1,0 +1,6 @@
+"0","complete_df %>%"
+"0","  filter(product_description == ""Ice Cream"") %>%"
+"0","  group_by(reason) %>%"
+"0","  summarize(c = n()) %>%"
+"0","  arrange(desc(c)) %>%"
+"0","  filter()"

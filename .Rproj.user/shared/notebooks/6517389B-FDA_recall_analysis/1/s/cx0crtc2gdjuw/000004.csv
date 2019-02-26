@@ -1,0 +1,8 @@
+"0","complete_df %>%"
+"0","   mutate(reason=tolower(reason)) %>%"
+"0","   mutate(product_description=tolower(product_description)) %>%"
+"0","   filter(grepl(""salmonella"",reason)) %>%"
+"0","   filter(grepl(""pistachio"",product_description)) %>%"
+"0","   group_by(brand_name, Year) %>%"
+"0","   summarize(c = n()) %>%"
+"0","   arrange(desc(c))"

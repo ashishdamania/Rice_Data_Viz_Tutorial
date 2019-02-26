@@ -1,0 +1,16 @@
+"0","chicago_weather <- read_csv(""weather_data/KORD_daily.txt"") "
+"2","Parsed with column specification:
+cols(
+  Site4 = [31mcol_character()[39m,
+  Date = [31mcol_character()[39m,
+  Source = [31mcol_character()[39m,
+  `Max Temp` = [32mcol_double()[39m,
+  `Min Temp` = [32mcol_double()[39m,
+  `Avg Temp` = [32mcol_double()[39m,
+  HDDs = [32mcol_double()[39m,
+  CDDs = [32mcol_double()[39m,
+  `Precipitation Water Equiv` = [32mcol_double()[39m,
+  Snowfall = [32mcol_double()[39m,
+  `Snow/Ice Depth` = [32mcol_double()[39m
+)
+"

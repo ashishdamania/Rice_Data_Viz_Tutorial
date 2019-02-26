@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1551155062735.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "948379902",
+    "id" : "7FA177B4",
+    "lastKnownWriteTime" : 1551155108,
+    "last_content_update" : 1551155108956,
+    "path" : "~/Rice_R_final/weather.Rmd",
+    "project_path" : "weather.Rmd",
+    "properties" : {
+        "chunk_output_type" : "inline"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

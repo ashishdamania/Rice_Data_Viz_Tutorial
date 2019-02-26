@@ -1,0 +1,234 @@
+---
+title: "R Notebook - Analyze genome data"
+output: 
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    highlight: haddock
+    mathjax: null
+    number_sections: yes
+    theme: readable
+    toc: yes
+    toc_float: yes
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+
+# Load library
+```{r}
+library(tidyverse)
+library(data.table)
+library(janitor)
+```
+
+## Read data
+```{r}
+genomes_data <- data.table::fread("genome_data/prokaryotes.txt") %>%
+  janitor::clean_names()
+```
+
+
+
+```{r}
+str(genomes_data)
+```
+
+
+
+
+
+## Fix the names and select columns we need
+```{r}
+genomes_data_df <- genomes_data %>%
+  janitor::clean_names() %>%
+  select(number_organism_name,
+         group,
+         sub_group,
+         strain,
+         size_mb,
+         gc_percent,
+         scaffolds,
+         genes,
+         proteins,
+         status,
+         release_date,
+         modify_date,
+         center
+         ) %>%
+  mutate(genes=as.numeric(genes), proteins = as.numeric(proteins))
+```
+
+
+# Find number of genomes released by year
+```{r}
+
+genomes_data_df %>%
+    separate(release_date, c("year","month","day")) %>%
+    group_by(year) %>%
+    summarise(genomes_cnt = n()) %>%
+    ggplot(.,aes(x = year, y = genomes_cnt)) +
+    geom_bar(stat = "identity") +
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+  
+```
+
+
+# Find number of complete genomes by year
+```{r}
+unique(genomes_data_df$status)
+```
+
+Complete Genome $>$ Chromosome $>$ Scaffold $>$ Contig 
+
+```{r}
+genomes_data_df %>%
+    separate(release_date, c("year","month","day")) %>%
+    filter(grepl("Complete", status)) %>%
+    group_by(year) %>%
+    summarise(genomes_cnt = n()) %>%
+    ggplot(.,aes(x = year, y = genomes_cnt)) +
+    geom_bar(stat = "identity") +
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+
+
+
+
+
+
+
+
+##Find number of genomes released by Baylor College of Medicine
+```{r}
+genomes_data_df %>%
+    separate(release_date, c("year","month","day")) %>%
+    group_by(center) %>%
+    summarise(genomes_cnt = n()) %>%
+    arrange(desc(genomes_cnt)) %>%
+    filter(grepl("Baylor|BCM",center))
+```
+
+
+
+# Find top 10 submitter of complete genomes. 
+```{r}
+genomes_data_df %>%
+    separate(release_date, c("year","month","day")) %>%
+    filter(grepl("Complete| Chromosome", status)) %>%
+    group_by(center) %>%
+    summarise(genomes_cnt = n()) %>%
+    arrange(desc(genomes_cnt)) %>%
+    slice(1:10) %>%
+    ggplot(.,aes(x = reorder(center, -genomes_cnt), y = genomes_cnt)) +
+    geom_bar(stat = "identity") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    coord_flip()
+```
+
+
+# Find the most submitted genome bacterium
+```{r}
+genomes_data_df %>%
+    separate(release_date, c("year","month","day")) %>%
+    group_by(number_organism_name) %>%
+    summarise(genomes_cnt = n()) %>%
+    arrange(desc(genomes_cnt))
+```
+
+
+#Find the most submitted genome by CDC
+```{r}
+genomes_data_df %>%
+  filter(grepl("CDC|Centers for Disease Control and Prevention|Food And Drug",center)) %>%
+   group_by(number_organism_name) %>%
+    summarise(genomes_cnt = n()) %>%
+    arrange(desc(genomes_cnt))
+```
+
+
+#What is the GC content of the bacteria sequenced by the CDC as compared to overall GC content?
+
+
+GC content indicates the percent of G,C bases out of total four base - ATGC that makes DNA
+
+
+```{r}
+genomes_data_df %>%
+  filter(grepl("CDC|Centers for Disease Control and Prevention|Food And Drug",center)) %>%
+  filter(status == "Complete Genome") %>%
+  mutate(gc_percent = as.numeric(gc_percent)) %>%
+  summarize(mean_gc = mean(gc_percent, na.rm = T))
+```
+
+#Calculate the GC percent by the group
+```{r}
+genomes_data_df %>%
+  filter(status == "Complete Genome") %>%
+  mutate(gc_percent = as.numeric(gc_percent)) %>%
+  group_by(sub_group) %>%
+  summarize(mean_gc = mean(gc_percent, na.rm = T)) %>%
+  arrange(desc(mean_gc))
+```
+
+
+
+#Calculate the size by the group 
+```{r}
+genomes_data_df %>%
+  filter(grepl("Complete", status)) %>%
+  mutate(size_mb = as.numeric(size_mb)) %>%
+  group_by(group) %>%
+  summarize(avg_size_mb = mean(size_mb, na.rm = T)) %>%
+  arrange(desc(avg_size_mb))
+```
+
+#Calculate the size by the group and sub_group
+```{r}
+genomes_data_df %>%
+  filter(grepl("Complete", status)) %>%
+  mutate(size_mb = as.numeric(size_mb)) %>%
+  group_by(group,sub_group) %>%
+  summarize(avg_size_mb = mean(size_mb, na.rm = T)) %>%
+  arrange(desc(avg_size_mb))
+```
+
+
+
+#What is the relation between genome size and genes?
+```{r}
+genomes_data_df %>% 
+filter(grepl("Complete", status)) %>%
+filter(size_mb < 5) %>%
+ggplot(.,aes(x = size_mb, y = genes)) +
+geom_point() +
+theme_bw() +
+geom_smooth(method = "lm", se = FALSE)
+```
+
+
+
+#What is the relation between genome size and GC-content?
+
+```{r}
+genomes_data_df %>% 
+filter(grepl("Complete", status)) %>%
+filter(size_mb > 5) %>%
+mutate(gc_percent = as.numeric(gc_percent)) %>%
+ggplot(.,aes(x = size_mb, y = gc_percent)) +
+geom_point() +
+theme_bw() +
+geom_smooth(method = "lm", se = TRUE)
+```
+
+
+
+
+
+
+
